@@ -56,20 +56,59 @@ public class ScoreCalculatorTest {
         when(game.getFirstPlayer()).thenReturn(player1);
         when(game.getSecondPlayer()).thenReturn(player2);
         when(game.getFirstPlayerScore()).thenReturn(Score.FIFTEEN);
-        when(game.getSecondPlayerScore()).thenReturn(Score.FORTY);
+        when(game.getSecondPlayerScore()).thenReturn(Score.FOURTY);
         final PointWonEvent pointWonEvent = ScoreCalculator.computeAndCreateEvent(cmd, game);
         assertEquals(pointWonEvent.getFirstPlayerScore(), Score.THIRTY);
-        assertEquals(pointWonEvent.getSecondPlayerScore(), Score.FORTY);
+        assertEquals(pointWonEvent.getSecondPlayerScore(), Score.FOURTY);
     }
 
     @Test
     public void should_declare_game_winner() {
         WinPointCommand cmd = mock(WinPointCommand.class);
         Game game = mock(Game.class);
-        when(game.getFirstPlayerScore()).thenReturn(Score.FORTY);
+        when(game.getFirstPlayerScore()).thenReturn(Score.FOURTY);
+        when(game.getSecondPlayerScore()).thenReturn(Score.FIFTEEN);
         when(cmd.getPointWinner()).thenReturn(player1);
         when(game.getFirstPlayer()).thenReturn(player1);
         final PointWonEvent pointWonEvent = ScoreCalculator.computeAndCreateEvent(cmd, game);
         assertEquals(pointWonEvent.getGameWinner().getName(), player1.getName());
+    }
+
+    @Test
+    public void should_handle_deuce_case() {
+        WinPointCommand cmd = mock(WinPointCommand.class);
+        Game game = mock(Game.class);
+        when(game.getFirstPlayerScore()).thenReturn(Score.FOURTY);
+        when(game.getSecondPlayerScore()).thenReturn(Score.ADVANTAGE);
+        when(cmd.getPointWinner()).thenReturn(player1);
+        when(game.getFirstPlayer()).thenReturn(player1);
+        final PointWonEvent pointWonEvent = ScoreCalculator.computeAndCreateEvent(cmd, game);
+        assertEquals(pointWonEvent.getSecondPlayerScore(), Score.FOURTY);
+        assertEquals(pointWonEvent.getFirstPlayerScore(), Score.FOURTY);
+    }
+
+    @Test
+    public void should_handle_advantage_case() {
+        WinPointCommand cmd = mock(WinPointCommand.class);
+        Game game = mock(Game.class);
+        when(game.getFirstPlayerScore()).thenReturn(Score.FOURTY);
+        when(game.getSecondPlayerScore()).thenReturn(Score.FOURTY);
+        when(cmd.getPointWinner()).thenReturn(player1);
+        when(game.getFirstPlayer()).thenReturn(player1);
+        final PointWonEvent pointWonEvent = ScoreCalculator.computeAndCreateEvent(cmd, game);
+        assertEquals(pointWonEvent.getSecondPlayerScore(), Score.FOURTY);
+        assertEquals(pointWonEvent.getFirstPlayerScore(), Score.ADVANTAGE);
+    }
+
+    @Test
+    public void should_win_game_when_player_having_advantage_win_point() {
+        WinPointCommand cmd = mock(WinPointCommand.class);
+        Game game = mock(Game.class);
+        when(game.getFirstPlayerScore()).thenReturn(Score.ADVANTAGE);
+        when(game.getSecondPlayerScore()).thenReturn(Score.FOURTY);
+        when(cmd.getPointWinner()).thenReturn(player1);
+        when(game.getFirstPlayer()).thenReturn(player1);
+        final PointWonEvent pointWonEvent = ScoreCalculator.computeAndCreateEvent(cmd, game);
+        assertEquals(pointWonEvent.getGameWinner().getName(), "player1");
     }
 }

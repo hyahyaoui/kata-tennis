@@ -40,7 +40,7 @@ public class AppConfig {
     }
 
     @Bean
-    public ScoreCalculator rulesChecker() {
+    public ScoreCalculator scoreCalculator() {
         return new ScoreCalculator();
     }
 

@@ -31,11 +31,11 @@ public class ScoreCalculatorTest {
         when(cmd.getFirstPlayer()).thenReturn(player1);
         when(cmd.getSecondPlayer()).thenReturn(player2);
         final GameStartedEvent event = ScoreCalculator.computeAndCreateEvent(cmd);
-        assertEquals(event.getFirstPlayer().getName(), "player1");
-        assertEquals(event.getSecondPlayer().getName(), "player2");
-        assertEquals(event.getFirstPlayerScore(), Score.LOVE);
-        assertEquals(event.getSecondPlayerScore(), Score.LOVE);
-        assertEquals(event.getId(), "id");
+        assertEquals("player1",event.getFirstPlayer().getName());
+        assertEquals("player2",event.getSecondPlayer().getName());
+        assertEquals(Score.LOVE,event.getFirstPlayerScore());
+        assertEquals(Score.LOVE,event.getSecondPlayerScore());
+        assertEquals("id",event.getId());
     }
 
     @Test
@@ -58,8 +58,8 @@ public class ScoreCalculatorTest {
         when(game.getFirstPlayerScore()).thenReturn(Score.FIFTEEN);
         when(game.getSecondPlayerScore()).thenReturn(Score.FOURTY);
         final PointWonEvent pointWonEvent = ScoreCalculator.computeAndCreateEvent(cmd, game);
-        assertEquals(pointWonEvent.getFirstPlayerScore(), Score.THIRTY);
-        assertEquals(pointWonEvent.getSecondPlayerScore(), Score.FOURTY);
+        assertEquals(Score.THIRTY,pointWonEvent.getFirstPlayerScore());
+        assertEquals(Score.FOURTY,pointWonEvent.getSecondPlayerScore());
     }
 
     @Test
@@ -71,7 +71,7 @@ public class ScoreCalculatorTest {
         when(cmd.getPointWinner()).thenReturn(player1);
         when(game.getFirstPlayer()).thenReturn(player1);
         final PointWonEvent pointWonEvent = ScoreCalculator.computeAndCreateEvent(cmd, game);
-        assertEquals(pointWonEvent.getGameWinner().getName(), player1.getName());
+        assertEquals(player1.getName(),pointWonEvent.getGameWinner().getName());
     }
 
     @Test
@@ -83,8 +83,8 @@ public class ScoreCalculatorTest {
         when(cmd.getPointWinner()).thenReturn(player1);
         when(game.getFirstPlayer()).thenReturn(player1);
         final PointWonEvent pointWonEvent = ScoreCalculator.computeAndCreateEvent(cmd, game);
-        assertEquals(pointWonEvent.getSecondPlayerScore(), Score.FOURTY);
-        assertEquals(pointWonEvent.getFirstPlayerScore(), Score.FOURTY);
+        assertEquals(Score.FOURTY,pointWonEvent.getSecondPlayerScore());
+        assertEquals(Score.FOURTY,pointWonEvent.getFirstPlayerScore());
     }
 
     @Test
@@ -96,8 +96,8 @@ public class ScoreCalculatorTest {
         when(cmd.getPointWinner()).thenReturn(player1);
         when(game.getFirstPlayer()).thenReturn(player1);
         final PointWonEvent pointWonEvent = ScoreCalculator.computeAndCreateEvent(cmd, game);
-        assertEquals(pointWonEvent.getSecondPlayerScore(), Score.FOURTY);
-        assertEquals(pointWonEvent.getFirstPlayerScore(), Score.ADVANTAGE);
+        assertEquals(Score.FOURTY,pointWonEvent.getSecondPlayerScore());
+        assertEquals(Score.ADVANTAGE,pointWonEvent.getFirstPlayerScore());
     }
 
     @Test
@@ -109,6 +109,6 @@ public class ScoreCalculatorTest {
         when(cmd.getPointWinner()).thenReturn(player1);
         when(game.getFirstPlayer()).thenReturn(player1);
         final PointWonEvent pointWonEvent = ScoreCalculator.computeAndCreateEvent(cmd, game);
-        assertEquals(pointWonEvent.getGameWinner().getName(), "player1");
+        assertEquals("player1",pointWonEvent.getGameWinner().getName());
     }
 }

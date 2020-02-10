@@ -48,21 +48,21 @@ public class TennisGameStepDef {
     @Then("Player {string} should win the game")
     public void playerPlayerShouldWonTheGame(String player) {
         GameEntity gameEntity = getGameEntity();
-        assertEquals(gameEntity.getGameWinner(), player);
+        assertEquals(player, gameEntity.getGameWinner());
     }
 
     @Then("Player {string} should have advantage")
     public void playerPlayerShouldHaveAdvantage(String player) {
         GameEntity gameEntity = getGameEntity();
-        assertEquals(gameEntity.getSecondPlayerScore(), Score.ADVANTAGE);
+        assertEquals(Score.ADVANTAGE, gameEntity.getSecondPlayerScore());
     }
 
 
     @Then("deuce rule should be applied")
     public void deuceRuleShouldBeApplied() {
         GameEntity gameEntity = getGameEntity();
-        assertEquals(gameEntity.getFirstPlayerScore(), Score.FOURTY);
-        assertEquals(gameEntity.getSecondPlayerScore(), Score.FOURTY);
+        assertEquals(Score.FOURTY, gameEntity.getFirstPlayerScore());
+        assertEquals(Score.FOURTY, gameEntity.getSecondPlayerScore());
     }
 
     private GameEntity getGameEntity() {

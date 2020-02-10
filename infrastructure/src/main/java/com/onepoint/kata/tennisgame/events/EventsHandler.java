@@ -4,7 +4,6 @@ import com.onepoint.kata.tennisgame.entities.GameEntity;
 import com.onepoint.kata.tennisgame.providers.TennisRepositoryProvider;
 import lombok.RequiredArgsConstructor;
 import org.axonframework.eventhandling.EventHandler;
-import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 

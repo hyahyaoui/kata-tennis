@@ -1,6 +1,5 @@
 package com.onepoint.kata.tennisgame.events;
 
-import com.onepoint.kata.tennisgame.command.StartGameCommand;
 import com.onepoint.kata.tennisgame.domain.Player;
 import com.onepoint.kata.tennisgame.domain.Score;
 import lombok.AllArgsConstructor;

@@ -1,6 +1,7 @@
 package com.onepoint.kata.tennisgame.services;
 
 import com.onepoint.kata.tennisgame.command.StartGameCommand;
+import com.onepoint.kata.tennisgame.command.StartSetCommand;
 import com.onepoint.kata.tennisgame.command.WinPointCommand;
 import com.onepoint.kata.tennisgame.entities.GameEntity;
 import com.onepoint.kata.tennisgame.providers.CommandsProvider;
@@ -23,7 +24,11 @@ public class TennisGameService {
         this.commandsProvider.send(cmd);
     }
 
-    public Optional<GameEntity> findGame(String id) {
-        return tennisRepositoryProvider.findGame(id);
+    public void send(StartSetCommand cmd) {
+        this.commandsProvider.send(cmd);
+    }
+
+    public Optional<GameEntity> findGame(String tennisSetId, String gameId) {
+        return tennisRepositoryProvider.findGame(tennisSetId, gameId);
     }
 }

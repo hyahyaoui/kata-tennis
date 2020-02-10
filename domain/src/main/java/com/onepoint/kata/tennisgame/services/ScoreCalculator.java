@@ -1,93 +1,143 @@
 package com.onepoint.kata.tennisgame.services;
 
 import com.onepoint.kata.tennisgame.command.StartGameCommand;
+import com.onepoint.kata.tennisgame.command.StartSetCommand;
 import com.onepoint.kata.tennisgame.command.WinPointCommand;
-import com.onepoint.kata.tennisgame.domain.Game;
-import com.onepoint.kata.tennisgame.domain.Player;
-import com.onepoint.kata.tennisgame.domain.Score;
-import com.onepoint.kata.tennisgame.events.GameStartedEvent;
-import com.onepoint.kata.tennisgame.events.PointWonEvent;
+import com.onepoint.kata.tennisgame.domain.*;
+import com.onepoint.kata.tennisgame.events.*;
 import com.onepoint.kata.tennisgame.exceptions.BusinessRuleViolatedException;
 
 import java.util.Optional;
 
-import static com.onepoint.kata.tennisgame.domain.Score.LOVE;
+import static com.onepoint.kata.tennisgame.domain.GameScore.LOVE;
+import static com.onepoint.kata.tennisgame.domain.TennisSetScore.*;
 
 public class ScoreCalculator {
 
-    public static GameStartedEvent computeAndCreateEvent(StartGameCommand cmd) {
+    public static GameStartedEvent computeScoreWhenGameStartedEvent(StartGameCommand cmd) {
         return GameStartedEvent
                 .builder()
-                .id(cmd.getId())
-                .firstPlayer(cmd.getFirstPlayer())
-                .secondPlayer(cmd.getSecondPlayer())
+                .gameId(cmd.getId())
+                .tennisSetId(cmd.getTennisSetId())
                 .firstPlayerScore(LOVE)
                 .secondPlayerScore(LOVE)
                 .build();
     }
 
-    public static PointWonEvent computeAndCreateEvent(WinPointCommand cmd, Game game) {
-        Optional<Player> winner = Optional.empty();
-        Score pointWinnerNewScore;
-
-        if (game.getGameWinner() != null) {
-            throw new BusinessRuleViolatedException("Game already finished !");
-        }
-
-        final boolean isFirstPlayerPointWinner = cmd.getPointWinner().equals(game.getFirstPlayer());
-
-        final Score pointWinnerScore = isFirstPlayerPointWinner ? game.getFirstPlayerScore() :
-                game.getSecondPlayerScore();
-        final Score otherPlayerScore = isFirstPlayerPointWinner ? game.getSecondPlayerScore() :
-                game.getFirstPlayerScore();
-
-        winner = declareWinnerIfHappen(game, isFirstPlayerPointWinner, pointWinnerScore, otherPlayerScore);
-
-        pointWinnerNewScore = computeNewScore(pointWinnerScore, otherPlayerScore);
-
-        Score firstPlayerScore = isFirstPlayerPointWinner ? pointWinnerNewScore : game.getFirstPlayerScore();
-        Score secondPlayerScore = !isFirstPlayerPointWinner ? pointWinnerNewScore : game.getSecondPlayerScore();
-
-        // Adjust score in case advantage lost
-        if (!winner.isPresent() && isFirstPlayerPointWinner && Score.ADVANTAGE.equals(secondPlayerScore)) {
-            secondPlayerScore = Score.FOURTY;
-        }
-
-        if (!winner.isPresent() && !isFirstPlayerPointWinner && Score.ADVANTAGE.equals(firstPlayerScore)) {
-            firstPlayerScore = Score.FOURTY;
-        }
-
-        return PointWonEvent.builder()
-                .gameId(cmd.getGameId())
-                .firstPlayerScore(firstPlayerScore)
-                .secondPlayerScore(secondPlayerScore)
-                .gameWinner(winner.orElse(null))
+    public static TennisSetStartedEvent computeScoreWhenTennisSetStartedEvent(StartSetCommand cmd) {
+        return TennisSetStartedEvent
+                .builder()
+                .id(cmd.getId())
+                .id(cmd.getId())
+                .firstPlayer(cmd.getFirstPlayer())
+                .secondPlayer(cmd.getSecondPlayer())
+                .firstPlayerScore(ZERO)
+                .secondPlayerScore(ZERO)
                 .build();
     }
 
-    private static Optional<Player> declareWinnerIfHappen(Game game,boolean isFirstPlayerPointWinner,
-                                                Score pointWinnerScore, Score otherPlayerScore) {
-        if (pointWinnerScore.getNumberOfPointWon() >= Score.FOURTY.getNumberOfPointWon()) {
-            if (pointWinnerScore.getNumberOfPointWon() > otherPlayerScore.getNumberOfPointWon()) {
-                return  Optional.of(isFirstPlayerPointWinner ? game.getFirstPlayer() : game.getSecondPlayer());
+    public static WonEvent computeScoreWhenPointWonEvent(WinPointCommand cmd, TennisSet tennisSet) {
+        return gameOrPointWon(cmd, tennisSet);
+    }
+
+    private static WonEvent gameOrPointWon(WinPointCommand cmd, TennisSet tennisSet) {
+        Optional<Player> gameWinner = Optional.empty();
+        GameScore pointWinnerNewGameScore;
+        Game game = tennisSet.getGames().get(cmd.getGameId());
+        if (game.getWinner() != null) {
+            throw new BusinessRuleViolatedException("Game already finished !");
+        }
+
+        final boolean isFirstPlayerPointWinner = cmd.getWinner().equals(tennisSet.getFirstPlayer());
+
+        final GameScore firstPlayerScore = game.getFirstPlayerScore();
+        final GameScore secondPlayerScore = game.getSecondPlayerScore();
+        final GameScore pointWinnerGameScore = isFirstPlayerPointWinner ? firstPlayerScore : secondPlayerScore;
+        final GameScore otherPlayerGameScore = isFirstPlayerPointWinner ? secondPlayerScore : firstPlayerScore;
+
+        gameWinner = declareGameWinnerIfHappen(tennisSet, isFirstPlayerPointWinner, pointWinnerGameScore, otherPlayerGameScore);
+
+        pointWinnerNewGameScore = computeNewScore(pointWinnerGameScore, otherPlayerGameScore);
+
+        GameScore firstPlayerGameScore = isFirstPlayerPointWinner ? pointWinnerNewGameScore : firstPlayerScore;
+        GameScore secondPlayerGameScore = !isFirstPlayerPointWinner ? pointWinnerNewGameScore : secondPlayerScore;
+
+        // Adjust score in case advantage lost
+
+        if (!gameWinner.isPresent() && isFirstPlayerPointWinner && GameScore.ADVANTAGE.equals(secondPlayerGameScore)) {
+            secondPlayerGameScore = GameScore.FOURTY;
+        }
+
+        if (!gameWinner.isPresent() && !isFirstPlayerPointWinner && GameScore.ADVANTAGE.equals(firstPlayerGameScore)) {
+            firstPlayerGameScore = GameScore.FOURTY;
+        }
+
+        if (!gameWinner.isPresent()) {
+            return pointWonEvent(cmd, firstPlayerGameScore, secondPlayerGameScore);
+        }
+        return gameWonEvent(cmd, gameWinner, firstPlayerGameScore, secondPlayerGameScore, tennisSet);
+    }
+
+    private static Optional<Player> declareGameWinnerIfHappen(TennisSet tennisSet, boolean isFirstPlayerPointWinner,
+                                                              GameScore pointWinnerGameScore, GameScore otherPlayerGameScore) {
+        if (pointWinnerGameScore.getNumberOfPointWon() >= GameScore.FOURTY.getNumberOfPointWon()) {
+            if (pointWinnerGameScore.getNumberOfPointWon() > otherPlayerGameScore.getNumberOfPointWon()) {
+                return Optional.of(isFirstPlayerPointWinner ? tennisSet.getFirstPlayer() : tennisSet.getSecondPlayer());
             }
         }
         return Optional.empty();
     }
 
-    private static Score computeNewScore(Score pointWinnerScore, Score otherPlayerScore) {
-        switch (pointWinnerScore) {
+
+    private static PointWonEvent pointWonEvent(WinPointCommand cmd, GameScore firstPlayerGameScore,
+                                               GameScore secondPlayerGameScore) {
+        return PointWonEvent.builder()
+                .gameId(cmd.getGameId())
+                .tennisSetId(cmd.getTennisSetId())
+                .firstPlayerScore(firstPlayerGameScore)
+                .secondPlayerScore(secondPlayerGameScore)
+                .build();
+    }
+
+    private static GameWonEvent gameWonEvent(WinPointCommand cmd, Optional<Player> gameWinner,
+                                             GameScore firstPlayerGameScore, GameScore secondPlayerGameScore,
+                                             TennisSet tennisSet) {
+        boolean isFirstPlayerGameWinner = gameWinner.get().getName().equals(tennisSet.getFirstPlayer().getName());
+        TennisSetScore oldWinnerScore = isFirstPlayerGameWinner ? tennisSet.getFirstPlayerScore() : tennisSet.getSecondPlayerScore();
+        TennisSetScore winnerScore = computeNewScore(oldWinnerScore);
+        return GameWonEvent.builder()
+                .gameId(cmd.getGameId())
+                .tennisSetId(cmd.getTennisSetId())
+                .firstPlayerScore(firstPlayerGameScore)
+                .secondPlayerScore(secondPlayerGameScore)
+                .firstPlayerSetScore(isFirstPlayerGameWinner ? winnerScore : tennisSet.getFirstPlayerScore())
+                .firstPlayerSetScore(!isFirstPlayerGameWinner ? winnerScore : tennisSet.getSecondPlayerScore())
+                .winner(gameWinner.get())
+                .build();
+    }
+
+    private static GameScore computeNewScore(GameScore pointWinnerGameScore, GameScore otherPlayerGameScore) {
+        switch (pointWinnerGameScore) {
             case LOVE:
-                return Score.FIFTEEN;
+                return GameScore.FIFTEEN;
             case FIFTEEN:
-                return Score.THIRTY;
+                return GameScore.THIRTY;
             case THIRTY:
-                return Score.FOURTY;
+                return GameScore.FOURTY;
             case FOURTY:
-                return Score.FOURTY.equals(otherPlayerScore) ? Score.ADVANTAGE : Score.FOURTY;
+                return GameScore.FOURTY.equals(otherPlayerGameScore) ? GameScore.ADVANTAGE : GameScore.FOURTY;
             default:
-                return Score.ADVANTAGE;
+                return GameScore.ADVANTAGE;
         }
     }
+
+    private static TennisSetScore computeNewScore(TennisSetScore oldScore) {
+
+        if (oldScore.getNumberOfPointWon() < SIX.getNumberOfPointWon()) {
+            return oldScore.next();
+        }
+        return SIX;
+    }
+
 
 }

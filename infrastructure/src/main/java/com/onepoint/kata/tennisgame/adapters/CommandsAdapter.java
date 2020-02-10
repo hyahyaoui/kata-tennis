@@ -1,9 +1,11 @@
 package com.onepoint.kata.tennisgame.adapters;
 
-import com.onepoint.kata.tennisgame.aggregates.GameAggregate;
+import com.onepoint.kata.tennisgame.aggregates.TennisSetAggregate;
 import com.onepoint.kata.tennisgame.command.StartGameCommand;
+import com.onepoint.kata.tennisgame.command.StartSetCommand;
 import com.onepoint.kata.tennisgame.command.WinPointCommand;
 import com.onepoint.kata.tennisgame.commands.StartGameCmd;
+import com.onepoint.kata.tennisgame.commands.StartSetCmd;
 import com.onepoint.kata.tennisgame.commands.WinPointCmd;
 import com.onepoint.kata.tennisgame.exceptions.MiddleWareException;
 import com.onepoint.kata.tennisgame.providers.CommandsProvider;
@@ -17,7 +19,7 @@ import org.axonframework.modelling.command.Repository;
 public class CommandsAdapter implements CommandsProvider {
 
     private final CommandGateway commandGateway;
-    private final Repository<GameAggregate> gameAggregateRepository;
+    private final Repository<TennisSetAggregate> tennisSetAggregateRepository;
 
     @Override
     public void send(StartGameCommand cmd) {
@@ -29,24 +31,36 @@ public class CommandsAdapter implements CommandsProvider {
         commandGateway.sendAndWait(WinPointCmd.from(cmd));
     }
 
+    @Override
+    public void send(StartSetCommand cmd) {
+        commandGateway.sendAndWait(StartSetCmd.from(cmd));
+    }
+
 
     @CommandHandler
-    public void handle(StartGameCmd cmd) {
-        GameAggregate gameAggregate = new GameAggregate(cmd.getId());
+    public void handle(StartSetCmd cmd) {
+        TennisSetAggregate tennisSetAggregate = new TennisSetAggregate(cmd.getId());
         try {
-            gameAggregateRepository.newInstance(() -> gameAggregate);
+            tennisSetAggregateRepository.newInstance(() -> tennisSetAggregate);
         } catch (Exception e) {
             throw new MiddleWareException(e);
         }
 
-        gameAggregateRepository.load(cmd.getId())
-                .execute(aggregate -> aggregate.handle(ScoreCalculator.computeAndCreateEvent(cmd)));
+        tennisSetAggregateRepository.load(cmd.getId())
+                .execute(aggregate -> aggregate.handle(ScoreCalculator.computeScoreWhenTennisSetStartedEvent(cmd)));
+    }
+
+    @CommandHandler
+    public void handle(StartGameCmd cmd) {
+        tennisSetAggregateRepository.load(cmd.getTennisSetId())
+                .execute(aggregate -> aggregate.handle(ScoreCalculator.computeScoreWhenGameStartedEvent(cmd)));
     }
 
     @CommandHandler
     public void handle(WinPointCmd cmd) {
-        gameAggregateRepository.load(cmd.getGameId())
-                .execute(aggregate -> aggregate.handle(ScoreCalculator.computeAndCreateEvent(cmd, aggregate)));
+        tennisSetAggregateRepository.load(cmd.getTennisSetId())
+                .execute(aggregate -> aggregate.handle(
+                        ScoreCalculator.computeScoreWhenPointWonEvent(cmd, aggregate)));
     }
 
 

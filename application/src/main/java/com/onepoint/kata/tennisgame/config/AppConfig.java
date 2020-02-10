@@ -2,11 +2,10 @@ package com.onepoint.kata.tennisgame.config;
 
 import com.onepoint.kata.tennisgame.adapters.TennisRepositoryAdapter;
 import com.onepoint.kata.tennisgame.adapters.CommandsAdapter;
-import com.onepoint.kata.tennisgame.aggregates.GameAggregate;
 import com.onepoint.kata.tennisgame.aggregates.TennisSetAggregate;
 import com.onepoint.kata.tennisgame.events.EventsHandler;
 import com.onepoint.kata.tennisgame.providers.CommandsProvider;
-import com.onepoint.kata.tennisgame.services.ScoreCalculator;
+import com.onepoint.kata.tennisgame.services.EventsBuilder;
 import com.onepoint.kata.tennisgame.services.TennisGameService;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.caching.Cache;
@@ -41,8 +40,8 @@ public class AppConfig {
     }
 
     @Bean
-    public ScoreCalculator scoreCalculator() {
-        return new ScoreCalculator();
+    public EventsBuilder scoreCalculator() {
+        return new EventsBuilder();
     }
 
     @Bean

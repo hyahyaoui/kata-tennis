@@ -4,6 +4,7 @@ import com.onepoint.kata.tennisgame.command.StartGameCommand;
 import com.onepoint.kata.tennisgame.command.StartSetCommand;
 import com.onepoint.kata.tennisgame.command.WinPointCommand;
 import com.onepoint.kata.tennisgame.entities.GameEntity;
+import com.onepoint.kata.tennisgame.entities.TennisSetEntity;
 import com.onepoint.kata.tennisgame.providers.CommandsProvider;
 import com.onepoint.kata.tennisgame.providers.TennisRepositoryProvider;
 import lombok.RequiredArgsConstructor;
@@ -30,5 +31,9 @@ public class TennisGameService {
 
     public Optional<GameEntity> findGame(String tennisSetId, String gameId) {
         return tennisRepositoryProvider.findGame(tennisSetId, gameId);
+    }
+
+    public Optional<TennisSetEntity> findTennisSet(String id) {
+        return tennisRepositoryProvider.findTennisSet(id);
     }
 }

@@ -15,4 +15,7 @@ public interface TennisSet {
     TennisSetScore getFirstPlayerScore();
 
     TennisSetScore getSecondPlayerScore();
+
+    Player getWinner();
+
 }

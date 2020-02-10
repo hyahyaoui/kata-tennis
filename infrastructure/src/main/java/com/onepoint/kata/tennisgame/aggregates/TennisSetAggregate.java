@@ -28,6 +28,7 @@ public class TennisSetAggregate implements TennisSet {
     private Player secondPlayer;
     private TennisSetScore firstPlayerScore = TennisSetScore.ZERO;
     private TennisSetScore secondPlayerScore = TennisSetScore.ZERO;
+    private Player winner;
 
     public TennisSetAggregate(String id) {
         this.id = id;
@@ -48,6 +49,10 @@ public class TennisSetAggregate implements TennisSet {
 
 
     public void handle(GameWonEvent event) {
+        apply(event);
+    }
+
+    public void handle(TennisSetWonEvent event) {
         apply(event);
     }
 
@@ -76,14 +81,30 @@ public class TennisSetAggregate implements TennisSet {
     public void on(GameWonEvent event) {
         GameAggregate game = this.games.get(event.getGameId());
         game.on(event);
+        this.firstPlayerScore = event.getFirstPlayerSetScore();
+        this.secondPlayerScore = event.getSecondPlayerSetScore();
+    }
+
+    @EventSourcingHandler
+    public void on(TennisSetWonEvent event) {
+        GameAggregate game = this.games.get(event.getLastGameId());
+        game.on(event);
+        this.winner = event.getWinner();
+        this.firstPlayerScore = event.getFirstPlayerSetScore();
+        this.secondPlayerScore = event.getSecondPlayerSetScore();
     }
 
 
     public void handle(WonEvent event) {
-        if ((event instanceof GameWonEvent)) {
-            handle((GameWonEvent) event);
-        } else {
-            handle((PointWonEvent) event);
+        switch (event.getWonEventType()) {
+            case POINT:
+                handle((PointWonEvent) event);
+                break;
+            case GAME:
+                handle((GameWonEvent) event);
+                break;
+            default:
+                handle((TennisSetWonEvent) event);
         }
     }
 }

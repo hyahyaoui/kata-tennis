@@ -9,7 +9,7 @@ import com.onepoint.kata.tennisgame.commands.StartSetCmd;
 import com.onepoint.kata.tennisgame.commands.WinPointCmd;
 import com.onepoint.kata.tennisgame.exceptions.MiddleWareException;
 import com.onepoint.kata.tennisgame.providers.CommandsProvider;
-import com.onepoint.kata.tennisgame.services.ScoreCalculator;
+import com.onepoint.kata.tennisgame.services.EventsBuilder;
 import lombok.RequiredArgsConstructor;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
@@ -47,20 +47,20 @@ public class CommandsAdapter implements CommandsProvider {
         }
 
         tennisSetAggregateRepository.load(cmd.getId())
-                .execute(aggregate -> aggregate.handle(ScoreCalculator.computeScoreWhenTennisSetStartedEvent(cmd)));
+                .execute(aggregate -> aggregate.handle(EventsBuilder.build(cmd)));
     }
 
     @CommandHandler
     public void handle(StartGameCmd cmd) {
         tennisSetAggregateRepository.load(cmd.getTennisSetId())
-                .execute(aggregate -> aggregate.handle(ScoreCalculator.computeScoreWhenGameStartedEvent(cmd)));
+                .execute(aggregate -> aggregate.handle(EventsBuilder.build(cmd)));
     }
 
     @CommandHandler
     public void handle(WinPointCmd cmd) {
         tennisSetAggregateRepository.load(cmd.getTennisSetId())
                 .execute(aggregate -> aggregate.handle(
-                        ScoreCalculator.computeScoreWhenPointWonEvent(cmd, aggregate)));
+                        EventsBuilder.build(cmd, aggregate)));
     }
 
 

@@ -78,3 +78,15 @@ Feature: Tennis Game
      | player1   |
      | player1   |
    Then Player 'player1' should win the game 'game'
+
+
+  Scenario: Player will win the set
+    Given A tennis set started with the following information
+      | firstPlayerName  | player1 |
+      | secondPlayerName | player2 |
+    When  The following point are won in game for 6 times
+      | player2   |
+      | player2   |
+      | player2   |
+      | player2   |
+    Then Player 'player2' should win the set

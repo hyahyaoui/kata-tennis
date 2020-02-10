@@ -6,6 +6,7 @@ import com.onepoint.kata.tennisgame.domain.GameScore;
 import com.onepoint.kata.tennisgame.events.GameStartedEvent;
 import com.onepoint.kata.tennisgame.events.GameWonEvent;
 import com.onepoint.kata.tennisgame.events.PointWonEvent;
+import com.onepoint.kata.tennisgame.events.TennisSetWonEvent;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -36,6 +37,13 @@ public class GameAggregate implements Game {
     public void on(GameWonEvent event) {
         this.firstPlayerScore = event.getFirstPlayerScore();
         this.secondPlayerScore = event.getSecondPlayerScore();
+        this.winner = event.getWinner();
+    }
+
+    public void on(TennisSetWonEvent event) {
+        this.firstPlayerScore = event.getFirstPlayerGameScore();
+        this.secondPlayerScore = event.getSecondPlayerGameScore();
+        // set winner is the last game winner :)
         this.winner = event.getWinner();
     }
 

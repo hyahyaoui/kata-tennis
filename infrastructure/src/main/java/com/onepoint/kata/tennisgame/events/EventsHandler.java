@@ -52,11 +52,35 @@ public class EventsHandler {
                 .findGame(event.getTennisSetId(), event.getGameId());
         if (game.isPresent()) {
             final GameEntity gameEntity = game.get();
-            final String gameWinner = event.getWinner() != null ? event.getWinner().getName() : null;
+            final String gameWinner = event.getWinner().getName();
             gameEntity.setFirstPlayerGameScore(event.getFirstPlayerScore())
                     .setSecondPlayerGameScore(event.getSecondPlayerScore())
                     .setWinner(gameWinner);
             tennisRepositoryProvider.saveGame(event.getTennisSetId(), gameEntity);
+        }
+    }
+
+    @EventHandler
+    public void on(TennisSetWonEvent event) {
+        Optional<TennisSetEntity> tennisSet = tennisRepositoryProvider
+                .findTennisSet(event.getTennisSetId());
+        if (tennisSet.isPresent()) {
+            final String gameWinner = event.getWinner().getName();
+            final String lastGameId = event.getLastGameId();
+
+            TennisSetEntity tennisSetEntity = tennisSet.get();
+
+            tennisSetEntity.getGameEntities().get(lastGameId)
+                    .setFirstPlayerGameScore(event.getFirstPlayerGameScore());
+            tennisSetEntity.getGameEntities().get(lastGameId)
+                    .setSecondPlayerGameScore(event.getFirstPlayerGameScore());
+            tennisSetEntity.getGameEntities().get(lastGameId).setWinner(event.getWinner().getName());
+
+            tennisSetEntity.setSecondPlayerScore(event.getSecondPlayerSetScore());
+            tennisSetEntity.setSecondPlayerScore(event.getSecondPlayerSetScore());
+            tennisSetEntity.setWinner(gameWinner);
+
+            tennisRepositoryProvider.saveTennisSet(tennisSetEntity);
         }
     }
 }

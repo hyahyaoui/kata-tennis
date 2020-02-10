@@ -9,6 +9,8 @@ import com.onepoint.kata.tennisgame.events.GameStartedEvent;
 import com.onepoint.kata.tennisgame.events.PointWonEvent;
 import com.onepoint.kata.tennisgame.exceptions.BusinessRuleViolatedException;
 
+import java.util.Optional;
+
 import static com.onepoint.kata.tennisgame.domain.Score.LOVE;
 
 public class ScoreCalculator {
@@ -25,32 +27,33 @@ public class ScoreCalculator {
     }
 
     public static PointWonEvent computeAndCreateEvent(WinPointCommand cmd, Game game) {
-        Player winner = null;
-        Score newScore;
+        Optional<Player> winner = Optional.empty();
+        Score pointWinnerNewScore;
+
         if (game.getGameWinner() != null) {
             throw new BusinessRuleViolatedException("Game already finished !");
         }
+
         final boolean isFirstPlayerPointWinner = cmd.getPointWinner().equals(game.getFirstPlayer());
+
         final Score pointWinnerScore = isFirstPlayerPointWinner ? game.getFirstPlayerScore() :
                 game.getSecondPlayerScore();
         final Score otherPlayerScore = isFirstPlayerPointWinner ? game.getSecondPlayerScore() :
                 game.getFirstPlayerScore();
 
-        if (pointWinnerScore.getNumberOfPointWon() >= Score.FOURTY.getNumberOfPointWon()) {
-            if (pointWinnerScore.getNumberOfPointWon() > otherPlayerScore.getNumberOfPointWon()) {
-                winner = isFirstPlayerPointWinner ? game.getFirstPlayer() : game.getSecondPlayer();
-            }
-        }
-        newScore = computeNewScore(pointWinnerScore, otherPlayerScore);
+        winner = declareWinnerIfHappen(game, isFirstPlayerPointWinner, pointWinnerScore, otherPlayerScore);
 
-        Score firstPlayerScore = isFirstPlayerPointWinner ? newScore : game.getFirstPlayerScore();
-        Score secondPlayerScore = !isFirstPlayerPointWinner ? newScore : game.getSecondPlayerScore();
+        pointWinnerNewScore = computeNewScore(pointWinnerScore, otherPlayerScore);
 
-        if (winner == null && isFirstPlayerPointWinner && Score.ADVANTAGE.equals(secondPlayerScore)) {
+        Score firstPlayerScore = isFirstPlayerPointWinner ? pointWinnerNewScore : game.getFirstPlayerScore();
+        Score secondPlayerScore = !isFirstPlayerPointWinner ? pointWinnerNewScore : game.getSecondPlayerScore();
+
+        // Adjust score in case advantage lost
+        if (!winner.isPresent() && isFirstPlayerPointWinner && Score.ADVANTAGE.equals(secondPlayerScore)) {
             secondPlayerScore = Score.FOURTY;
         }
 
-        if (winner == null && !isFirstPlayerPointWinner && Score.ADVANTAGE.equals(firstPlayerScore)) {
+        if (!winner.isPresent() && !isFirstPlayerPointWinner && Score.ADVANTAGE.equals(firstPlayerScore)) {
             firstPlayerScore = Score.FOURTY;
         }
 
@@ -58,8 +61,18 @@ public class ScoreCalculator {
                 .gameId(cmd.getGameId())
                 .firstPlayerScore(firstPlayerScore)
                 .secondPlayerScore(secondPlayerScore)
-                .gameWinner(winner)
+                .gameWinner(winner.orElse(null))
                 .build();
+    }
+
+    private static Optional<Player> declareWinnerIfHappen(Game game,boolean isFirstPlayerPointWinner,
+                                                Score pointWinnerScore, Score otherPlayerScore) {
+        if (pointWinnerScore.getNumberOfPointWon() >= Score.FOURTY.getNumberOfPointWon()) {
+            if (pointWinnerScore.getNumberOfPointWon() > otherPlayerScore.getNumberOfPointWon()) {
+                return  Optional.of(isFirstPlayerPointWinner ? game.getFirstPlayer() : game.getSecondPlayer());
+            }
+        }
+        return Optional.empty();
     }
 
     private static Score computeNewScore(Score pointWinnerScore, Score otherPlayerScore) {

@@ -1,13 +1,15 @@
 package com.onepoint.kata.tennisgame.domain;
 
-public enum Score {
+import java.util.Arrays;
+
+public enum GameScore {
 
     LOVE(0), FIFTEEN(15), THIRTY(30), FOURTY(40),
     ADVANTAGE(50);
 
     private int numberOfPointWon;
 
-    Score(int numberOfPointWon) {
+    GameScore(int numberOfPointWon) {
         this.numberOfPointWon = numberOfPointWon;
     }
 

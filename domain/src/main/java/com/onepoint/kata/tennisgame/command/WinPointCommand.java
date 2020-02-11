@@ -5,8 +5,10 @@ import com.onepoint.kata.tennisgame.domain.Player;
 
 public interface WinPointCommand {
 
+    String getTennisSetId();
+
     String getGameId();
 
-    Player getPointWinner();
+    Player getWinner();
 
 }

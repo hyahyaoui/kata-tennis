@@ -1,6 +1,6 @@
 package com.onepoint.kata.tennisgame.entities;
 
-import com.onepoint.kata.tennisgame.domain.Score;
+import com.onepoint.kata.tennisgame.domain.GameScore;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -9,9 +9,7 @@ import lombok.experimental.Accessors;
 public class GameEntity {
 
     private String id;
-    private String firstPlayerName;
-    private String secondPlayerName;
-    private Score firstPlayerScore;
-    private Score secondPlayerScore;
-    private String gameWinner;
+    private GameScore firstPlayerGameScore;
+    private GameScore secondPlayerGameScore;
+    private String winner;
 }

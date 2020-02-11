@@ -1,5 +1,6 @@
 package com.onepoint.kata.tennisgame.commands;
 
+import com.onepoint.kata.tennisgame.command.StartSetCommand;
 import com.onepoint.kata.tennisgame.command.WinPointCommand;
 import com.onepoint.kata.tennisgame.domain.Player;
 import lombok.Data;
@@ -11,19 +12,19 @@ import org.axonframework.modelling.command.TargetAggregateIdentifier;
 @Data
 @NoArgsConstructor
 @Accessors(chain = true)
-public class WinPointCmd implements WinPointCommand {
+public class StartSetCmd implements StartSetCommand {
     @TargetAggregateIdentifier
     @NonNull
-    private String tennisSetId;
+    private String id;
     @NonNull
-    private String gameId;
+    private Player firstPlayer;
     @NonNull
-    private Player winner;
+    private Player secondPlayer;
 
-    public static WinPointCmd from(WinPointCommand cmd) {
-        return new WinPointCmd()
-                .setGameId(cmd.getGameId())
-                .setTennisSetId(cmd.getTennisSetId())
-                .setWinner(cmd.getWinner());
+    public static StartSetCmd from(StartSetCommand cmd) {
+        return new StartSetCmd()
+                .setId(cmd.getId())
+                .setFirstPlayer(cmd.getFirstPlayer())
+                .setSecondPlayer(cmd.getSecondPlayer());
     }
 }

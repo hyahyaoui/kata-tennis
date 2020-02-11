@@ -5,7 +5,6 @@ import com.onepoint.kata.tennisgame.command.StartSetCommand;
 import com.onepoint.kata.tennisgame.command.WinPointCommand;
 import com.onepoint.kata.tennisgame.domain.*;
 import com.onepoint.kata.tennisgame.events.*;
-import com.onepoint.kata.tennisgame.exceptions.BusinessRuleViolatedException;
 
 import java.util.Optional;
 
@@ -44,36 +43,34 @@ public class EventsBuilder {
 
         Game game = tennisSet.getGames().get(cmd.getGameId());
 
-        if (game.getWinner() != null) {
-            throw new BusinessRuleViolatedException("Game already finished !");
+        if (tennisSet.isWithTieBreak()) {
+            return buildTieBreakPointOrGameWonEvent(cmd, tennisSet);
         }
 
         final boolean isFirstPlayerPointWinner = cmd.getWinner().equals(tennisSet.getFirstPlayer());
         GameScore firstPlayerGameScore = game.getFirstPlayerScore();
         GameScore secondPlayerGameScore = game.getSecondPlayerScore();
         final GameScore pointWinnerGameScore = isFirstPlayerPointWinner ? firstPlayerGameScore : secondPlayerGameScore;
-        final GameScore otherPlayerGameScore = isFirstPlayerPointWinner ? secondPlayerGameScore : firstPlayerGameScore;
+        final GameScore otherPlayerGameScore = !isFirstPlayerPointWinner ? firstPlayerGameScore : secondPlayerGameScore;
 
 
-        Optional<Player> gameWinner = TennisGameRules.declareGameWinnerIfHappen(tennisSet, isFirstPlayerPointWinner,
-                pointWinnerGameScore, otherPlayerGameScore);
+        boolean isGameWon = TennisGameRules.isGameWon(pointWinnerGameScore, otherPlayerGameScore);
 
         GameScore pointWinnerNewGameScore = TennisGameRules.computeGameScoreAfterPointWon(pointWinnerGameScore, otherPlayerGameScore);
 
-        firstPlayerGameScore = TennisGameRules.updateGameScoreIfNeeded(gameWinner, isFirstPlayerPointWinner,
+        firstPlayerGameScore = TennisGameRules.updateGameScoreIfNeeded(isGameWon, isFirstPlayerPointWinner,
                 firstPlayerGameScore, pointWinnerNewGameScore);
-        secondPlayerGameScore = TennisGameRules.updateGameScoreIfNeeded(gameWinner, !isFirstPlayerPointWinner,
+        secondPlayerGameScore = TennisGameRules.updateGameScoreIfNeeded(isGameWon, !isFirstPlayerPointWinner,
                 secondPlayerGameScore, pointWinnerNewGameScore);
 
 
-        if (!gameWinner.isPresent()) {
+        if (!isGameWon) {
             return buildPointWonEvent(cmd, firstPlayerGameScore, secondPlayerGameScore);
         }
-        return adjustTennisSetScoreAndBuildGameOrTennisSetWonEvent(cmd, gameWinner.get(),
+        return adjustTennisSetScoreAndBuildGameOrTennisSetWonEvent(cmd, cmd.getWinner(),
                 firstPlayerGameScore, secondPlayerGameScore, tennisSet);
 
     }
-
 
     private static PointWonEvent buildPointWonEvent(WinPointCommand cmd, GameScore firstPlayerGameScore,
                                                     GameScore secondPlayerGameScore) {
@@ -93,52 +90,96 @@ public class EventsBuilder {
         boolean isFirstPlayerGameWinner = gameWinner.getName().equals(tennisSet.getFirstPlayer().getName());
 
         TennisSetScore tennisSetWinnerOldScore = isFirstPlayerGameWinner ? tennisSet.getFirstPlayerScore() : tennisSet.getSecondPlayerScore();
+        TennisSetScore otherPlayerScore = !isFirstPlayerGameWinner ? tennisSet.getFirstPlayerScore() : tennisSet.getSecondPlayerScore();
         TennisSetScore tennisSetWinnerCurrentScore = TennisGameRules.computeTennisSetScore(tennisSetWinnerOldScore);
 
-        Optional<Player> tennisSetWinner = TennisGameRules.declareSetWinnerIfHappen(tennisSet,
-                isFirstPlayerGameWinner, tennisSetWinnerCurrentScore);
+        boolean isSetWon = TennisGameRules.isSetWon(tennisSetWinnerCurrentScore, otherPlayerScore);
 
-        if (!tennisSetWinner.isPresent()) {
-            return buildGameWonEvent(cmd, gameWinner, firstPlayerGameScore, secondPlayerGameScore,
-                    tennisSet, isFirstPlayerGameWinner, tennisSetWinnerCurrentScore);
+        final TennisSetScore firstPlayerSetScore = isFirstPlayerGameWinner ? tennisSetWinnerCurrentScore :
+                tennisSet.getFirstPlayerScore();
+        final TennisSetScore secondPlayerSetScore = !isFirstPlayerGameWinner ? tennisSetWinnerCurrentScore :
+                tennisSet.getSecondPlayerScore();
+
+        if (!isSetWon) {
+            boolean isTieBreakToBeTriggered = TennisGameRules.shouldPlayTieBreak(firstPlayerSetScore,
+                    secondPlayerSetScore);
+            return buildGameWonEvent(cmd, firstPlayerGameScore, secondPlayerGameScore,
+                    firstPlayerSetScore, secondPlayerSetScore, isTieBreakToBeTriggered);
         }
 
-        return buildTennisSetWonEvent(cmd, tennisSetWinner.get(), firstPlayerGameScore, secondPlayerGameScore,
-                tennisSet, isFirstPlayerGameWinner, tennisSetWinnerCurrentScore);
+        return buildTennisSetWonEvent(cmd, firstPlayerGameScore, secondPlayerGameScore,
+                firstPlayerSetScore, secondPlayerSetScore, 0, 0);
     }
 
 
-    private static GameWonEvent buildGameWonEvent(WinPointCommand cmd, Player gameWinner,
+    private static WonEvent buildTieBreakPointOrGameWonEvent(WinPointCommand cmd, TennisSet tennisSet) {
+
+        boolean isFirstPlayerPointWinner = cmd.getWinner().equals(tennisSet.getFirstPlayer());
+
+        int pointWinnerTieBreakScore = isFirstPlayerPointWinner ? tennisSet.getFirstPlayerTieBreakScore() :
+                tennisSet.getSecondPlayerTieBreakScore();
+        int otherPlayerTieBreakScore = !isFirstPlayerPointWinner ? tennisSet.getFirstPlayerTieBreakScore() :
+                tennisSet.getSecondPlayerTieBreakScore();
+
+        int newWinnerTieBreakScore = TennisGameRules.computeNewTieBreakScore(pointWinnerTieBreakScore);
+        int firstPlayerTieBreakScore = isFirstPlayerPointWinner ? newWinnerTieBreakScore : otherPlayerTieBreakScore;
+        int secondPlayerTieBreakScore = !isFirstPlayerPointWinner ? newWinnerTieBreakScore : otherPlayerTieBreakScore;
+
+        boolean isGameWon = TennisGameRules.isSetWithTieBreakWon(newWinnerTieBreakScore, otherPlayerTieBreakScore);
+
+        if (!isGameWon) {
+            return buildTieBreakPointWonEvent(cmd.getTennisSetId(), firstPlayerTieBreakScore,
+                    secondPlayerTieBreakScore);
+        }
+        return buildTennisSetWonEvent(cmd, null, null,
+                tennisSet.getFirstPlayerScore(), tennisSet.getSecondPlayerScore(),
+                firstPlayerTieBreakScore, secondPlayerTieBreakScore);
+    }
+
+    private static GameWonEvent buildGameWonEvent(WinPointCommand cmd,
                                                   GameScore firstPlayerGameScore, GameScore secondPlayerGameScore,
-                                                  TennisSet tennisSet, boolean isFirstPlayerGameWinner,
-                                                  TennisSetScore winnerScore) {
+                                                  TennisSetScore firstPlayerSetScore, TennisSetScore secondPlayerSetScore,
+                                                  boolean isTieBreakToBeTriggered) {
         return GameWonEvent.builder()
                 .gameId(cmd.getGameId())
                 .tennisSetId(cmd.getTennisSetId())
                 .firstPlayerScore(firstPlayerGameScore)
                 .secondPlayerScore(secondPlayerGameScore)
-                .firstPlayerSetScore(isFirstPlayerGameWinner ? winnerScore : tennisSet.getFirstPlayerScore())
-                .secondPlayerSetScore(!isFirstPlayerGameWinner ? winnerScore : tennisSet.getSecondPlayerScore())
-                .secondPlayerSetScore(!isFirstPlayerGameWinner ? winnerScore : tennisSet.getSecondPlayerScore())
-                .winner(gameWinner)
+                .firstPlayerSetScore(firstPlayerSetScore)
+                .secondPlayerSetScore(secondPlayerSetScore)
+                .gameTriggeringTieBreak(isTieBreakToBeTriggered)
+                .winner(cmd.getWinner()) // last one to win a point is necessarily game winner
                 .build();
     }
 
 
-    private static TennisSetWonEvent buildTennisSetWonEvent(WinPointCommand cmd, Player tennisSetWinner,
+    private static TennisSetWonEvent buildTennisSetWonEvent(WinPointCommand cmd,
                                                             GameScore firstPlayerGameScore, GameScore secondPlayerGameScore,
-                                                            TennisSet tennisSet, boolean isFirstPlayerGameWinner,
-                                                            TennisSetScore winnerScore) {
+                                                            TennisSetScore firstPlayerSetScore,
+                                                            TennisSetScore secondPlayerSetScore,
+                                                            int firstPlayerTieBreakScore,
+                                                            int secondPlayerTieBreakScore) {
         return TennisSetWonEvent.builder()
                 .lastGameId(cmd.getGameId())
                 .tennisSetId(cmd.getTennisSetId())
                 .firstPlayerGameScore(firstPlayerGameScore)
                 .secondPlayerGameScore(secondPlayerGameScore)
-                .firstPlayerSetScore(isFirstPlayerGameWinner ? winnerScore : tennisSet.getFirstPlayerScore())
-                .firstPlayerSetScore(!isFirstPlayerGameWinner ? winnerScore : tennisSet.getSecondPlayerScore())
-                .winner(tennisSetWinner)
+                .firstPlayerSetScore(firstPlayerSetScore)
+                .secondPlayerSetScore(secondPlayerSetScore)
+                .firstPlayerTieBreakScore(firstPlayerTieBreakScore)
+                .secondPlayerTieBreakScore(secondPlayerTieBreakScore)
+                .winner(cmd.getWinner()) // last one to win a point is necessarily game winner
                 .build();
 
     }
 
+    private static TieBreakPointWonEvent buildTieBreakPointWonEvent(String tennisSetId, int firstPlayerTieBreakScore,
+                                                                    int secondPlayerTieBreakScore) {
+        return TieBreakPointWonEvent
+                .builder()
+                .tennisSetId(tennisSetId)
+                .firstPlayerTieBreakScore(firstPlayerTieBreakScore)
+                .secondPlayerTieBreakScore(secondPlayerTieBreakScore)
+                .build();
+    }
 }

@@ -54,6 +54,15 @@ public class TennisGameStepDef {
         tennisGameService.send(startGameCmd);
     }
 
+    @And("The following point are won in tie break")
+    public void theFollowingPointAreWonInTieBreak(List<String> pointWinners) {
+        pointWinners.forEach(pointWinner -> {
+            waitFor(50);
+            tennisGameService.send(
+                    new WinPointCmd().setGameId("").setTennisSetId(id).setWinner(
+                            new Player().setName(pointWinner)));
+        });
+    }
     @When("The following point are won for {string}")
     public void theFollowingPointAreWon(String gameId, List<String> pointWinners) {
         winPoint(gameId, pointWinners);
@@ -61,6 +70,7 @@ public class TennisGameStepDef {
 
     private void winPoint(String gameId, List<String> pointWinners) {
         pointWinners.forEach(pointWinner -> {
+            waitFor(50);
             tennisGameService.send(
                     new WinPointCmd().setGameId(gameId).setTennisSetId(id).setWinner(
                             new Player().setName(pointWinner)));
@@ -69,12 +79,14 @@ public class TennisGameStepDef {
 
     @Then("Player {string} should win the game {string}")
     public void playerPlayerShouldWonTheGame(String player, String gameId) {
+        waitFor(50);
         GameEntity gameEntity = findGameById(id, gameId);
         assertEquals(player, gameEntity.getWinner());
     }
 
     @Then("Second player should have advantage for {string}")
     public void playerPlayerShouldHaveAdvantage(String gameId) {
+        waitFor(50);
         GameEntity gameEntity = findGameById(id, gameId);
         assertEquals(GameScore.ADVANTAGE, gameEntity.getSecondPlayerGameScore());
     }
@@ -82,6 +94,7 @@ public class TennisGameStepDef {
 
     @Then("deuce rule should be applied for {string}")
     public void deuceRuleShouldBeApplied(String gameId) {
+        waitFor(50);
         GameEntity gameEntity = findGameById(id, gameId);
         assertEquals(GameScore.FOURTY, gameEntity.getFirstPlayerGameScore());
         assertEquals(GameScore.FOURTY, gameEntity.getSecondPlayerGameScore());
@@ -90,6 +103,7 @@ public class TennisGameStepDef {
 
     @Then("Player {string} should win the set")
     public void playerPlayerShouldWinTheSet(String player) {
+        waitFor(50);
         TennisSetEntity tennisSetEntity = findTennisSetById(id);
         assertEquals(player, tennisSetEntity.getWinner());
     }
@@ -100,10 +114,25 @@ public class TennisGameStepDef {
 
             final String gameId = "game" + i + UUID.randomUUID();
             startGame(gameId);
+            waitFor(50);
             winPoint(gameId, pointWinners);
         }
     }
 
+
+    @Then("No one wins the set")
+    public void noOneWinsTheSet() {
+        waitFor(50);
+        assertEquals(null, findTennisSetById(id).getWinner());
+    }
+
+    private void waitFor(int i) {
+        try {
+            Thread.sleep(i);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 
     private GameEntity findGameById(String tennisSetId, String gameId) {
         final Optional<GameEntity> game =
@@ -116,4 +145,5 @@ public class TennisGameStepDef {
                 tennisGameService.findTennisSet(id);
         return tennisSet.orElseGet(TennisSetEntity::new);
     }
+
 }

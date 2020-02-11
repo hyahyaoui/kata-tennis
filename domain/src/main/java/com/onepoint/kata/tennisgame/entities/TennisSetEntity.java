@@ -20,4 +20,6 @@ public class TennisSetEntity {
     private TennisSetScore firstPlayerScore;
     private TennisSetScore secondPlayerScore;
     private String winner;
+    private int tieBeakFirstPlayerScore = 0;
+    private int tieBeakSecondPlayerScore = 0;
 }

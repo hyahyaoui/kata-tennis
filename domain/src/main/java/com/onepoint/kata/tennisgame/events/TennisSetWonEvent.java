@@ -19,6 +19,8 @@ public class TennisSetWonEvent implements WonEvent {
     private final GameScore secondPlayerGameScore;
     private final TennisSetScore firstPlayerSetScore;
     private final TennisSetScore secondPlayerSetScore;
+    private int firstPlayerTieBreakScore;
+    private int secondPlayerTieBreakScore;
     private final Player winner;
     private final WonEventType wonEventType = SET;
 }

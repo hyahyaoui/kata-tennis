@@ -8,6 +8,7 @@ import com.onepoint.kata.tennisgame.domain.TennisSetScore;
 import java.util.Optional;
 
 import static com.onepoint.kata.tennisgame.domain.GameScore.FOURTY;
+import static com.onepoint.kata.tennisgame.domain.TennisSetScore.SEVEN;
 import static com.onepoint.kata.tennisgame.domain.TennisSetScore.SIX;
 
 class TennisGameRules {
@@ -27,38 +28,44 @@ class TennisGameRules {
         }
     }
 
-    static GameScore updateGameScoreIfNeeded(Optional<Player> gameWinner, boolean isCurrentPlayerPointWinner,
+    static GameScore updateGameScoreIfNeeded(boolean isGameWon, boolean isCurrentPlayerPointWinner,
                                              GameScore currentPlayerScore, GameScore pointWinnerScore) {
         if (isCurrentPlayerPointWinner) currentPlayerScore = pointWinnerScore;
-        boolean advantageWillBeLost = !gameWinner.isPresent() && !isCurrentPlayerPointWinner &&
+        boolean advantageWillBeLost = !isGameWon && !isCurrentPlayerPointWinner &&
                 GameScore.ADVANTAGE.equals(currentPlayerScore);
         return advantageWillBeLost ? FOURTY : currentPlayerScore;
     }
 
     static TennisSetScore computeTennisSetScore(TennisSetScore oldScore) {
 
-        if (oldScore.getNumberOfPointWon() < SIX.getNumberOfPointWon()) {
+        if (oldScore.getNumberOfPointWon() < SEVEN.getNumberOfPointWon()) {
             return oldScore.next();
         }
-        return SIX;
+        return SEVEN;
     }
 
-    static Optional<Player> declareGameWinnerIfHappen(TennisSet tennisSet, boolean isFirstPlayerPointWinner,
-                                                      GameScore pointWinnerGameScore, GameScore otherPlayerGameScore) {
-        if (pointWinnerGameScore.getNumberOfPointWon() >= GameScore.FOURTY.getNumberOfPointWon()) {
-            if (pointWinnerGameScore.getNumberOfPointWon() > otherPlayerGameScore.getNumberOfPointWon()) {
-                return Optional.of(isFirstPlayerPointWinner ? tennisSet.getFirstPlayer() : tennisSet.getSecondPlayer());
-            }
-        }
-        return Optional.empty();
+    static boolean isGameWon(GameScore pointWinnerGameScore, GameScore otherPlayerGameScore) {
+        return (pointWinnerGameScore.getNumberOfPointWon() >= GameScore.FOURTY.getNumberOfPointWon())
+                && (pointWinnerGameScore.getNumberOfPointWon() > otherPlayerGameScore.getNumberOfPointWon());
     }
 
-    public static Optional<Player> declareSetWinnerIfHappen(TennisSet tennisSet, boolean isFirstPlayerGameWinner,
-                                                            TennisSetScore tennisSetWinnerCurrentScore) {
-        if (tennisSetWinnerCurrentScore == SIX) {
-            return Optional.of(isFirstPlayerGameWinner ? tennisSet.getFirstPlayer() : tennisSet.getSecondPlayer());
-        }
+    public static boolean isSetWon(TennisSetScore tennisSetWinnerCurrentScore,
+                                   TennisSetScore otherPlayerScore) {
+        return tennisSetWinnerCurrentScore.getNumberOfPointWon() >= SIX.getNumberOfPointWon()
+                && tennisSetWinnerCurrentScore.getNumberOfPointWon() > otherPlayerScore.getNumberOfPointWon() + 1;
+    }
 
-        return Optional.empty();
+
+    public static boolean shouldPlayTieBreak(TennisSetScore firstPlayerTennisSetScore,
+                                             TennisSetScore secondPlayerTennisSetScore) {
+        return firstPlayerTennisSetScore.equals(SIX) && secondPlayerTennisSetScore.equals(SIX);
+    }
+
+    public static int computeNewTieBreakScore(int pointWinnerTieBreakScore) {
+        return ++pointWinnerTieBreakScore;
+    }
+
+    public static boolean isSetWithTieBreakWon(int newWinnerTieBreakScore, int otherPlayerTieBreakScore) {
+        return newWinnerTieBreakScore >= 6 && (newWinnerTieBreakScore > otherPlayerTieBreakScore + 1);
     }
 }

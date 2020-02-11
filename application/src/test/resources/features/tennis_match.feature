@@ -90,3 +90,69 @@ Feature: Tennis Game
       | player2   |
       | player2   |
     Then Player 'player2' should win the set
+
+
+  Scenario: Player will win the set with two game point difference
+    Given A tennis set started with the following information
+      | firstPlayerName  | player1 |
+      | secondPlayerName | player2 |
+    When  The following point are won in game for 5 times
+      | player2   |
+      | player2   |
+      | player2   |
+      | player2   |
+    And  The following point are won in game for 5 times
+      | player1   |
+      | player1   |
+      | player1   |
+      | player1   |
+    And  The following point are won in game for 2 times
+      | player2   |
+      | player2   |
+      | player2   |
+      | player2   |
+    Then Player 'player2' should win the set
+
+  Scenario: No one win the set if 5 6 score
+    Given A tennis set started with the following information
+      | firstPlayerName  | player1 |
+      | secondPlayerName | player2 |
+    When  The following point are won in game for 5 times
+      | player2   |
+      | player2   |
+      | player2   |
+      | player2   |
+    And  The following point are won in game for 5 times
+      | player1   |
+      | player1   |
+      | player1   |
+      | player1   |
+    And  The following point are won in game for 1 times
+      | player2   |
+      | player2   |
+      | player2   |
+      | player2   |
+    Then No one wins the set
+
+  Scenario: win with TieBreak
+    Given A tennis set started with the following information
+      | firstPlayerName  | player1 |
+      | secondPlayerName | player2 |
+    When  The following point are won in game for 6 times
+      | player2   |
+      | player2   |
+      | player2   |
+      | player2   |
+    And  The following point are won in game for 6 times
+      | player1   |
+      | player1   |
+      | player1   |
+      | player1   |
+    And  The following point are won in tie break
+      | player2   |
+      | player2   |
+      | player2   |
+      | player2   |
+      | player2   |
+      | player2   |
+    Then Player 'player2' should win the set

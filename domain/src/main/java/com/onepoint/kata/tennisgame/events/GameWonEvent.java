@@ -21,5 +21,6 @@ public class GameWonEvent implements WonEvent{
     private final TennisSetScore secondPlayerSetScore;
     private final Player winner;
     private final WonEventType wonEventType = GAME;
+    private final boolean gameTriggeringTieBreak;
 
 }

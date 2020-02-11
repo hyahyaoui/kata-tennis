@@ -29,6 +29,9 @@ public class TennisSetAggregate implements TennisSet {
     private TennisSetScore firstPlayerScore = TennisSetScore.ZERO;
     private TennisSetScore secondPlayerScore = TennisSetScore.ZERO;
     private Player winner;
+    private int firstPlayerTieBreakScore;
+    private int secondPlayerTieBreakScore;
+    private boolean withTieBreak = false;
 
     public TennisSetAggregate(String id) {
         this.id = id;
@@ -53,6 +56,10 @@ public class TennisSetAggregate implements TennisSet {
     }
 
     public void handle(TennisSetWonEvent event) {
+        apply(event);
+    }
+
+    public void handle(TieBreakPointWonEvent event) {
         apply(event);
     }
 
@@ -83,15 +90,29 @@ public class TennisSetAggregate implements TennisSet {
         game.on(event);
         this.firstPlayerScore = event.getFirstPlayerSetScore();
         this.secondPlayerScore = event.getSecondPlayerSetScore();
+        this.withTieBreak = event.isGameTriggeringTieBreak();
     }
 
     @EventSourcingHandler
     public void on(TennisSetWonEvent event) {
         GameAggregate game = this.games.get(event.getLastGameId());
-        game.on(event);
+        final boolean isTieBreak = event.getFirstPlayerTieBreakScore() != 0
+                || event.getSecondPlayerTieBreakScore() != 0;
+        if (!isTieBreak) {
+            game.on(event);
+        }
         this.winner = event.getWinner();
         this.firstPlayerScore = event.getFirstPlayerSetScore();
         this.secondPlayerScore = event.getSecondPlayerSetScore();
+        this.firstPlayerTieBreakScore = event.getFirstPlayerTieBreakScore();
+        this.secondPlayerTieBreakScore = event.getSecondPlayerTieBreakScore();
+
+    }
+
+    @EventSourcingHandler
+    public void on(TieBreakPointWonEvent event) {
+        this.firstPlayerTieBreakScore = event.getFirstPlayerTieBreakScore();
+        this.secondPlayerTieBreakScore = event.getSecondPlayerTieBreakScore();
     }
 
 
@@ -103,8 +124,11 @@ public class TennisSetAggregate implements TennisSet {
             case GAME:
                 handle((GameWonEvent) event);
                 break;
-            default:
+            case SET:
                 handle((TennisSetWonEvent) event);
+                break;
+            default:
+                handle((TieBreakPointWonEvent) event);
         }
     }
 }

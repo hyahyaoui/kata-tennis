@@ -16,6 +16,12 @@ public interface TennisSet {
 
     TennisSetScore getSecondPlayerScore();
 
+    int getFirstPlayerTieBreakScore();
+
+    int getSecondPlayerTieBreakScore();
+
+    boolean isWithTieBreak();
+
     Player getWinner();
 
 }

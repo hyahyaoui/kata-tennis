@@ -1,5 +1,6 @@
 package com.onepoint.kata.tennisgame.events;
 
+import com.onepoint.kata.tennisgame.aggregates.GameAggregate;
 import com.onepoint.kata.tennisgame.entities.GameEntity;
 import com.onepoint.kata.tennisgame.entities.TennisSetEntity;
 import com.onepoint.kata.tennisgame.providers.TennisRepositoryProvider;
@@ -44,6 +45,7 @@ public class EventsHandler {
                     .setSecondPlayerGameScore(event.getSecondPlayerScore());
             tennisRepositoryProvider.saveGame(event.getTennisSetId(), gameEntity);
         }
+
     }
 
     @EventHandler
@@ -52,7 +54,7 @@ public class EventsHandler {
                 .findGame(event.getTennisSetId(), event.getGameId());
         if (game.isPresent()) {
             final GameEntity gameEntity = game.get();
-            final String gameWinner = event.getWinner().getName();
+            final String gameWinner = (event.getWinner() != null) ? event.getWinner().getName() : null;
             gameEntity.setFirstPlayerGameScore(event.getFirstPlayerScore())
                     .setSecondPlayerGameScore(event.getSecondPlayerScore())
                     .setWinner(gameWinner);
@@ -69,15 +71,19 @@ public class EventsHandler {
             final String lastGameId = event.getLastGameId();
 
             TennisSetEntity tennisSetEntity = tennisSet.get();
-
-            tennisSetEntity.getGameEntities().get(lastGameId)
-                    .setFirstPlayerGameScore(event.getFirstPlayerGameScore());
-            tennisSetEntity.getGameEntities().get(lastGameId)
-                    .setSecondPlayerGameScore(event.getFirstPlayerGameScore());
-            tennisSetEntity.getGameEntities().get(lastGameId).setWinner(event.getWinner().getName());
-
+            final boolean isTieBreak = event.getFirstPlayerTieBreakScore() != 0
+                    || event.getSecondPlayerTieBreakScore() != 0;
+            if (!isTieBreak) {
+                tennisSetEntity.getGameEntities().get(lastGameId)
+                        .setFirstPlayerGameScore(event.getFirstPlayerGameScore());
+                tennisSetEntity.getGameEntities().get(lastGameId)
+                        .setSecondPlayerGameScore(event.getFirstPlayerGameScore());
+                tennisSetEntity.getGameEntities().get(lastGameId).setWinner(event.getWinner().getName());
+            }
             tennisSetEntity.setSecondPlayerScore(event.getSecondPlayerSetScore());
             tennisSetEntity.setSecondPlayerScore(event.getSecondPlayerSetScore());
+            tennisSetEntity.setTieBeakFirstPlayerScore(event.getFirstPlayerTieBreakScore());
+            tennisSetEntity.setTieBeakSecondPlayerScore(event.getSecondPlayerTieBreakScore());
             tennisSetEntity.setWinner(gameWinner);
 
             tennisRepositoryProvider.saveTennisSet(tennisSetEntity);

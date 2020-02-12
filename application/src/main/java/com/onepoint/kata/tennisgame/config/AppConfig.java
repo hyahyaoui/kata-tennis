@@ -2,10 +2,10 @@ package com.onepoint.kata.tennisgame.config;
 
 import com.onepoint.kata.tennisgame.adapters.TennisRepositoryAdapter;
 import com.onepoint.kata.tennisgame.adapters.CommandsAdapter;
-import com.onepoint.kata.tennisgame.aggregates.GameAggregate;
+import com.onepoint.kata.tennisgame.aggregates.TennisSetAggregate;
 import com.onepoint.kata.tennisgame.events.EventsHandler;
 import com.onepoint.kata.tennisgame.providers.CommandsProvider;
-import com.onepoint.kata.tennisgame.services.ScoreCalculator;
+import com.onepoint.kata.tennisgame.services.EventsBuilder;
 import com.onepoint.kata.tennisgame.services.TennisGameService;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.caching.Cache;
@@ -27,21 +27,21 @@ public class AppConfig {
 
     @Bean
     public CommandsProvider commandsProvider(CommandGateway commandGateway,
-                                             Repository<GameAggregate> gamesRepository) {
-        return new CommandsAdapter(commandGateway, gamesRepository);
+                                             Repository<TennisSetAggregate> tennisSetAggregateRepository) {
+        return new CommandsAdapter(commandGateway, tennisSetAggregateRepository);
     }
 
     @Bean
-    public Repository<GameAggregate> gamesRepository(EventStore eventStore) {
-        return EventSourcingRepository.builder(GameAggregate.class)
+    public Repository<TennisSetAggregate> tennisSetAggregateRepository(EventStore eventStore) {
+        return EventSourcingRepository.builder(TennisSetAggregate.class)
                 .cache(cache())
                 .eventStore(eventStore)
                 .build();
     }
 
     @Bean
-    public ScoreCalculator scoreCalculator() {
-        return new ScoreCalculator();
+    public EventsBuilder scoreCalculator() {
+        return new EventsBuilder();
     }
 
     @Bean

@@ -4,14 +4,12 @@ public interface Game {
 
     String getId();
 
-    Player getFirstPlayer();
+    String getTennisSetId();
 
-    Player getSecondPlayer();
+    GameScore getFirstPlayerScore();
 
-    Score getFirstPlayerScore();
+    GameScore getSecondPlayerScore();
 
-    Score getSecondPlayerScore();
-
-    Player getGameWinner();
+    Player getWinner();
 
 }
